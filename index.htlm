@@ -1,15 +1,507 @@
 <!DOCTYPE html>
-<html>
-<head><title>AfroDownload</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<style>body{background:#111;color:#fff;font-family:sans-serif;text-align:center;padding:40px} h1{color:#ff3c00} a{color:#ff3c00}</style>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Yungee Music Player</title>
+    <style>
+        /* CSS Reset & Variables */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        :root {
+            --bg-color: #0a0a0a;
+            --primary-yellow: #ffcc00;
+            --text-main: #ffffff;
+            --text-sub: #d4b324;
+            --surface-dark: #121212;
+        }
+
+        body {
+            background-color: #333; /* Dark background for desktop viewing */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Mobile Device Container Simulation */
+        .app-container {
+            width: 100%;
+            max-width: 414px; /* iPhone Max width */
+            height: 100vh;
+            max-height: 896px;
+            background-color: var(--bg-color);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            color: var(--text-main);
+            /* Subtle gradient background matching the screenshot */
+            background-image: radial-gradient(circle at top, #1a1a1a 0%, #000000 60%);
+        }
+
+        /* Top Status Bar Simulation */
+        .status-bar {
+            background-color: var(--primary-yellow);
+            color: #000;
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 700;
+            z-index: 10;
+        }
+
+        /* Header / Close Button */
+        .header {
+            display: flex;
+            justify-content: flex-end;
+            padding: 20px;
+            z-index: 10;
+        }
+
+        .close-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 204, 0, 0.3);
+            background-color: rgba(255, 204, 0, 0.1);
+            color: var(--primary-yellow);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        /* Main Player Area */
+        .player-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            padding: 0 20px;
+        }
+
+        /* Floating Vertical Volume Slider (Left side) */
+        .volume-slider-container {
+            position: absolute;
+            left: 20px;
+            top: 20px;
+            width: 35px;
+            height: 120px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            padding-bottom: 10px;
+            overflow: hidden;
+        }
+
+        .volume-fill {
+            position: absolute;
+            top: 0;
+            width: 100%;
+            height: 60%; /* Represents current volume */
+            background-color: #ffffff;
+            border-radius: 20px;
+        }
+
+        .volume-icon-small {
+            position: relative;
+            z-index: 2;
+            color: #555; /* Dark icon on white fill */
+        }
+
+        /* Album Art */
+        .album-art-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 10px;
+            margin-bottom: 30px;
+        }
+
+        .album-art {
+            width: 260px;
+            height: 260px;
+            border-radius: 50%;
+            border: 2px solid var(--primary-yellow);
+            box-shadow: 0 0 20px rgba(255, 204, 0, 0.2);
+            object-fit: cover;
+        }
+
+        /* Song Info */
+        .song-info {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .song-title {
+            font-size: 22px;
+            font-weight: 800;
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .artist-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--primary-yellow);
+        }
+
+        /* Progress Bar Area */
+        .progress-section {
+            margin-bottom: 15px;
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 4px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            position: relative;
+            margin-bottom: 8px;
+        }
+
+        .progress-bar-fill {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 50%; /* Current progress */
+            background-color: var(--primary-yellow);
+            border-radius: 2px;
+        }
+
+        .progress-bar-fill::after {
+            content: '';
+            position: absolute;
+            right: -5px;
+            top: -3px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: var(--primary-yellow);
+        }
+
+        .time-stamps {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #888;
+            font-weight: 600;
+        }
+
+        /* Horizontal Volume Bar */
+        .horizontal-volume {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .horizontal-volume input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        .horizontal-volume input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+        }
+
+        .horizontal-volume input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--primary-yellow);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+        }
+
+        .icon-yellow {
+            color: var(--primary-yellow);
+            display: flex;
+            align-items: center;
+        }
+
+        /* Main Controls */
+        .main-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            margin-bottom: 30px;
+        }
+
+        .control-btn {
+            background-color: transparent;
+            border: 2px solid rgba(255, 204, 0, 0.3);
+            color: var(--primary-yellow);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .play-pause-btn {
+            width: 80px;
+            height: 80px;
+            background-color: var(--primary-yellow);
+            color: #000;
+            border: none;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 0 20px rgba(255, 204, 0, 0.4);
+            cursor: pointer;
+        }
+
+        /* Mini Player (Floating above nav) */
+        .mini-player {
+            background-color: var(--surface-dark);
+            border: 1px solid rgba(255, 204, 0, 0.3);
+            border-radius: 15px;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .mini-player-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .mini-album-art {
+            width: 40px;
+            height: 40px;
+            border-radius: 5px;
+            object-fit: cover;
+        }
+
+        .mini-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .mini-title {
+            font-size: 14px;
+            font-weight: 700;
+            max-width: 150px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .mini-artist {
+            font-size: 12px;
+            color: var(--text-sub);
+        }
+
+        .mini-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .mini-btn {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background-color: var(--primary-yellow);
+            color: #000;
+            border: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 15px 20px 15px;
+            background-color: var(--bg-color);
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #666;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 600;
+            gap: 5px;
+            width: 60px;
+        }
+
+        .nav-item.active {
+            background-color: var(--primary-yellow);
+            color: #000;
+            padding: 10px 0;
+            border-radius: 20px;
+        }
+
+        .nav-item svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        /* Watermark */
+        .watermark {
+            text-align: center;
+            color: #666;
+            font-size: 11px;
+            padding-bottom: 10px;
+        }
+
+        /* SVG Icons */
+        svg { width: 24px; height: 24px; fill: currentColor; }
+    </style>
 </head>
 <body>
-<h1>🔥 AfroDownload Live!</h1>
-<p>Your website is now LIVE at Afrodowndload415.github.io</p>
-<p>Ghana's #1 Afrobeat Download Platform</p>
-<br><br>
-<h2>✅ 404 Fixed!</h2>
-<p>Now send me your afropoo file and I'll add all your songs properly.</p>
+
+<div class="app-container">
+    
+    <!-- Simulated Phone Status Bar -->
+    <div class="status-bar">
+        <span>8:40</span>
+        <span>📶 3G 🔋</span>
+    </div>
+
+    <!-- Header Area -->
+    <div class="header">
+        <button class="close-btn">
+            <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+    </div>
+
+    <!-- Main Player Area -->
+    <div class="player-main">
+        
+        <!-- Floating Vertical Volume -->
+        <div class="volume-slider-container">
+            <div class="volume-fill"></div>
+            <div class="volume-icon-small">
+                <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+            </div>
+        </div>
+
+        <!-- Album Art -->
+        <div class="album-art-wrapper">
+            <!-- Replace src with your actual image -->
+            <img src="https://via.placeholder.com/300/333333/FFFFFF?text=Album+Art" alt="Album Art" class="album-art">
+        </div>
+
+        <!-- Song Details -->
+        <div class="song-info">
+            <div class="song-title">Waiting-for-you-feat-Naled...</div>
+            <div class="artist-name">Yungee</div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress-section">
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill"></div>
+            </div>
+            <div class="time-stamps">
+                <span>1:04</span>
+                <span>2:06</span>
+            </div>
+        </div>
+
+        <!-- Horizontal Volume Bar -->
+        <div class="horizontal-volume">
+            <div class="icon-yellow" style="width: 16px;">
+                <svg viewBox="0 0 24 24" style="width: 16px; height: 16px;"><path d="M3 9v6h4l5 5V4L7 9H3z"/></svg>
+            </div>
+            <!-- Slider handles the yellow dot -->
+            <input type="range" min="0" max="100" value="75">
+            <div class="icon-yellow">
+                <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+            </div>
+        </div>
+
+        <!-- Main Playback Controls -->
+        <div class="main-controls">
+            <button class="control-btn">
+                <svg viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg>
+            </button>
+            <button class="play-pause-btn">
+                <svg viewBox="0 0 24 24" style="width: 32px; height: 32px;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+            </button>
+            <button class="control-btn">
+                <svg viewBox="0 0 24 24"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg>
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Floating Mini Player (Above Nav) -->
+    <div class="mini-player">
+        <div class="mini-player-left">
+            <img src="https://via.placeholder.com/40/333333/FFFFFF?text=Art" alt="Mini Art" class="mini-album-art">
+            <div class="mini-text">
+                <div class="mini-title">Waiting-for-you-feat-Nale...</div>
+                <div class="mini-artist">Yungee</div>
+            </div>
+        </div>
+        <div class="mini-controls">
+            <button class="mini-btn">
+                <svg viewBox="0 0 24 24" style="width: 16px; height: 16px;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+            </button>
+            <button class="mini-btn">
+                <svg viewBox="0 0 24 24" style="width: 16px; height: 16px;"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="#" class="nav-item active">
+            <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+            Home
+        </a>
+        <a href="#" class="nav-item">
+            <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+            Search
+        </a>
+        <a href="#" class="nav-item">
+            <svg viewBox="0 0 24 24"><path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
+            Library
+        </a>
+        <a href="#" class="nav-item">
+            <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            You
+        </a>
+    </nav>
+
+    <div class="watermark">afrodownload.site</div>
+
+</div>
+
 </body>
 </html>
